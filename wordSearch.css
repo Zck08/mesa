@@ -258,3 +258,7 @@ body {
 .hide {
     display: none;
 }
+
+#tuGameId {
+  touch-action: none;
+}

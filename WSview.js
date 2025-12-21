@@ -183,129 +183,98 @@ function WordSearchView(matrix, list, gameId, listId, wordsFound) {
 	 * into three main parts: pressing the mouse down (mousedown), dragging it (mouseenter), 
 	 * and finally releasing the mouse (mouseup)!
 	 */
-	this.triggerMouseDrag = function() {	
+this.triggerMouseDrag = function () {
 
-	 	//empty array to store the selected cells in a move
-		var selectedLetters = [];
+    var selectedLetters = [];
+    var wordMade = '';
+    var pointerIsDown = false;
 
-		// //empty string to store the word made by a 
-		var wordMade = ''; 
+    // Evita scroll / zoom mientras se arrastra en móvil
+    $(gameId).css("touch-action", "none");
 
-	 	//variable to store if the mouse is down
-		var mouseIsDown = false;	
+    // ======================
+    // POINTER DOWN (mouse + touch)
+    // ======================
+    $(select.cells).on("pointerdown", function (e) {
 
+        e.preventDefault();
+        pointerIsDown = true;
 
-        /* 
-        executes when the mouse is pressed down on a letter in the search grid
-        */
-		$(select.cells).mousedown(function() {
-			
-			//sets true that mouse is down
-			mouseIsDown = true;
+        $(this).addClass(names.selected);
+        $(this).attr({ id: names.pivot });
 
-			//selects the pressed cell
-			$(this).addClass(names.selected);
+        highlightValidDirections($(this), matrix, names.selectable);
+    });
 
-			//sets the pressed cell to be the 'pivot' of the move
-			$(this).attr({id: names.pivot});
+    // ======================
+    // POINTER ENTER (drag)
+    // ======================
+    $(select.cells).on("pointerenter", function () {
 
-			//highlights all the possible paths the user may go to select more letters
-			highlightValidDirections($(this), matrix, names.selectable);
+        if (pointerIsDown && $(this).hasClass(names.selectable)) {
 
-		});
+            var currentDirection = $(this).attr(names.path);
 
-		/** this code executes when the mouse is down and the user starts moving their
-		 * mouse inside the puzzle container
-		 */
-		$(select.cells).mouseenter(function() {  
-			
-			//ensures the mouse is down and the cell the mouse is on is on a valid path
-			if (mouseIsDown && $(this).hasClass(names.selectable)) {  
+            // limpiar selección previa
+            for (var i = 0; i < selectedLetters.length; i++) {
+                selectedLetters[i].removeClass(names.selected);
+            }
 
-				//holds the direction of the path the mouse is currently on
-				var currentDirection = $(this).attr(names.path);  
+            selectedLetters = [];
+            wordMade = '';
 
-				//unselects selected cells
-				for (var i = 0; i < selectedLetters.length; i++) {
+            var cells = selectCellRange(
+                select.cells,
+                $(this),
+                names.path,
+                currentDirection,
+                selectedLetters,
+                wordMade
+            );
 
-					selectedLetters[i].removeClass(names.selected);
+            wordMade = cells.word;
+            selectedLetters = cells.array;
+        }
+    });
 
-				}
+    // ======================
+    // POINTER UP (fin del gesto)
+    // ======================
+    $(document).on("pointerup", function () {
+        if (pointerIsDown) {
+            endMove();
+        }
+    });
 
-				//empties the array of selected letters
-				selectedLetters = [];
+    // ======================
+    // POINTER LEAVE DEL TABLERO
+    // ======================
+    $(gameId).on("pointerleave", function () {
+        if (pointerIsDown) {
+            endMove();
+        }
+    });
 
-				//empties string of the word being constructed 
-				wordMade = '';
+    // ======================
+    // FINALIZAR JUGADA
+    // ======================
+    function endMove() {
 
-				//resets the range of cells to select
-				var cells = selectCellRange(select.cells, $(this), names.path, currentDirection, selectedLetters, wordMade);
+        pointerIsDown = false;
 
-				wordMade = cells.word;
-				selectedLetters = cells.array;
+        if (validWordMade(list, wordMade)) {
+            $(select.selected).addClass("found");
+        }
 
-			}
+        $(select.selected).removeClass(names.selected);
+        $(select.cells).removeAttr(names.path);
+        $(select.pivot).removeAttr("id");
+        $(select.selectable).removeClass(names.selectable);
 
-		});
-
-		/** this code calls the endMove function when the mouse is released - it mostly checks 
-		 * the word made and whether it's a word to be found, as well as resetting variables 
-		 * to allow another move 
-		 */
-		$(select.cells).mouseup(function() {
-
-			endMove();
-
-		});
-
-		/** if the user is playing the game and moves their mouse out of the word grid, this function
-		 * makes it so that the move automatically ends - this makes pressing the mouse down and 
-		 * accidentally/purposely leaving the board less annoying to deal with!
-		 */
-		$(gameId).mouseleave (function() {
-
-			if (mouseIsDown) { //checks that the user is indeed pressing their mouse down (therefore, playing)
-
-				endMove();
-
-			}	
-
-		});
-
-		/** this function handles everything ending a move should consist of - resetting variables
-		 * for a new move and checking if a proper word to find has been made
-		 */
-		function endMove() {
-
-			//sets mouse down as false since the mouse is now up
-			mouseIsDown = false;
-
-			//checks if a word on the list was selected
-			if (validWordMade(list, wordMade)) {
-
-				$(select.selected).addClass("found");
-
-			}
-
-			//unselects any selected letters
-			$(select.selected).removeClass(names.selected);
-
-			//removes the direction attributes of any cells (prevents strange behavior)
-			$(select.cells).removeAttr(names.path);
-
-			//removes the pivot's ID so a new pivot can be selected 
-			$(select.pivot).removeAttr("id");
-
-			//remove selectability of selectable cells 
-			$(select.selectable).removeClass(names.selectable);
-
-			//empties the word string and selected cells' array
-			wordMade = '';
-			selectedLetters = [];
-
-			}
-
-	}
+        wordMade = '';
+        selectedLetters = [];
+    };
+};
 
     /*
     highlights all the valid directions in the matrix from where mouse is first clicked
