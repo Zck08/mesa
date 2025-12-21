@@ -1,0 +1,9 @@
+{
+    "C_Cpp.errorSquiggles": "enabled",
+    "cSpell.words": [
+        "jsonify",
+        "tictactoe",
+        "Tmenu"
+    ],
+    "liveServer.settings.port": 5501
+}
