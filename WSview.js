@@ -188,8 +188,8 @@ this.triggerMouseDrag = function () {
     var selectedLetters = [];
     var wordMade = '';
     var pointerIsDown = false;
+    var lastCell = null;
 
-    // Evita scroll en móvil
     $(gameId).css("touch-action", "none");
 
     // ======================
@@ -199,6 +199,7 @@ this.triggerMouseDrag = function () {
 
         e.preventDefault();
         pointerIsDown = true;
+        lastCell = this;
 
         $(this).addClass(names.selected);
         $(this).attr({ id: names.pivot });
@@ -207,31 +208,32 @@ this.triggerMouseDrag = function () {
     });
 
     // ======================
-    // POINTER MOVE (CLAVE PARA MÓVIL)
+    // POINTER MOVE (SOBRE EL TABLERO)
     // ======================
-    $(document).on("pointermove", function (e) {
+    $(gameId).on("pointermove", function (e) {
 
         if (!pointerIsDown) return;
 
-        var el = document.elementFromPoint(e.clientX, e.clientY);
+        const el = document.elementFromPoint(e.clientX, e.clientY);
         if (!el) return;
 
-        var $cell = $(el).closest(select.cells);
-        if (!$cell.length) return;
+        const cell = el.closest(select.cells);
+        if (!cell || cell === lastCell) return;
+
+        lastCell = cell;
+        const $cell = $(cell);
 
         if ($cell.hasClass(names.selectable)) {
 
-            var currentDirection = $cell.attr(names.path);
+            const currentDirection = $cell.attr(names.path);
 
-            // limpiar selección anterior
-            selectedLetters.forEach(function (c) {
-                c.removeClass(names.selected);
-            });
+            // limpiar selección previa
+            selectedLetters.forEach(c => c.removeClass(names.selected));
 
             selectedLetters = [];
             wordMade = '';
 
-            var cells = selectCellRange(
+            const cells = selectCellRange(
                 select.cells,
                 $cell,
                 names.path,
@@ -248,14 +250,7 @@ this.triggerMouseDrag = function () {
     // ======================
     // POINTER UP
     // ======================
-    $(document).on("pointerup", function () {
-        if (pointerIsDown) endMove();
-    });
-
-    // ======================
-    // SALIR DEL TABLERO
-    // ======================
-    $(gameId).on("pointerleave", function () {
+    $(document).on("pointerup pointercancel", function () {
         if (pointerIsDown) endMove();
     });
 
@@ -265,6 +260,7 @@ this.triggerMouseDrag = function () {
     function endMove() {
 
         pointerIsDown = false;
+        lastCell = null;
 
         if (validWordMade(list, wordMade)) {
             $(select.selected).addClass("found");
