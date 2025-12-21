@@ -117,6 +117,7 @@ body {
 
 	/*ensures text can't be accidentally selected*/
 	cursor: default; 
+	pointer-events: auto;
 	-moz-user-select: none;
     -ms-user-select: none; 
     -khtml-user-select: none; 

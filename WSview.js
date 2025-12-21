@@ -189,11 +189,11 @@ this.triggerMouseDrag = function () {
     var wordMade = '';
     var pointerIsDown = false;
 
-    // Evita scroll / zoom mientras se arrastra en móvil
+    // Evita scroll en móvil
     $(gameId).css("touch-action", "none");
 
     // ======================
-    // POINTER DOWN (mouse + touch)
+    // POINTER DOWN
     // ======================
     $(select.cells).on("pointerdown", function (e) {
 
@@ -207,25 +207,33 @@ this.triggerMouseDrag = function () {
     });
 
     // ======================
-    // POINTER ENTER (drag)
+    // POINTER MOVE (CLAVE PARA MÓVIL)
     // ======================
-    $(select.cells).on("pointerenter", function () {
+    $(document).on("pointermove", function (e) {
 
-        if (pointerIsDown && $(this).hasClass(names.selectable)) {
+        if (!pointerIsDown) return;
 
-            var currentDirection = $(this).attr(names.path);
+        var el = document.elementFromPoint(e.clientX, e.clientY);
+        if (!el) return;
 
-            // limpiar selección previa
-            for (var i = 0; i < selectedLetters.length; i++) {
-                selectedLetters[i].removeClass(names.selected);
-            }
+        var $cell = $(el).closest(select.cells);
+        if (!$cell.length) return;
+
+        if ($cell.hasClass(names.selectable)) {
+
+            var currentDirection = $cell.attr(names.path);
+
+            // limpiar selección anterior
+            selectedLetters.forEach(function (c) {
+                c.removeClass(names.selected);
+            });
 
             selectedLetters = [];
             wordMade = '';
 
             var cells = selectCellRange(
                 select.cells,
-                $(this),
+                $cell,
                 names.path,
                 currentDirection,
                 selectedLetters,
@@ -238,21 +246,17 @@ this.triggerMouseDrag = function () {
     });
 
     // ======================
-    // POINTER UP (fin del gesto)
+    // POINTER UP
     // ======================
     $(document).on("pointerup", function () {
-        if (pointerIsDown) {
-            endMove();
-        }
+        if (pointerIsDown) endMove();
     });
 
     // ======================
-    // POINTER LEAVE DEL TABLERO
+    // SALIR DEL TABLERO
     // ======================
     $(gameId).on("pointerleave", function () {
-        if (pointerIsDown) {
-            endMove();
-        }
+        if (pointerIsDown) endMove();
     });
 
     // ======================
@@ -273,7 +277,7 @@ this.triggerMouseDrag = function () {
 
         wordMade = '';
         selectedLetters = [];
-    };
+    }
 };
 
     /*
