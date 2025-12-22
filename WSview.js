@@ -198,9 +198,10 @@ this.triggerMouseDrag = function () {
     $(select.cells).on("pointerdown", function (e) {
 
         e.preventDefault();
+		this.setPointerCapture(e.pointerId);
         pointerIsDown = true;
         lastCell = this;
-
+		
         $(this).addClass(names.selected);
         $(this).attr({ id: names.pivot });
 
@@ -258,6 +259,9 @@ this.triggerMouseDrag = function () {
     // FINALIZAR JUGADA
     // ======================
     function endMove() {
+		try {
+    		document.releasePointerCapture?.();
+		} catch(e) {}
 
         pointerIsDown = false;
         lastCell = null;
