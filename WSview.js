@@ -1,194 +1,139 @@
-/* 
-Created By Catherine Rodriquez
-PATCH: soporte táctil real (mobile)
-*/
-
-"use strict";
-
 function WordSearchView(matrix, list, gameId, listId, wordsFound) {
 
-	"use strict";
+    let firstCell = null;
+    let selecting = false;
 
-	var selfSolved = true;
+    const CELL = ".cell";
 
-	var names = { 
-		cell: "cell",
-		pivot: "pivot",
-		selectable: "selectable",
-		selected: "selected",
-		path: "path"
-	};
+    this.setUpView = function () {
+        createGrid();
+        createWordList();
+    };
 
- 	var select = {  
-		cells: "." + names.cell,
-		pivot: "#" + names.pivot,
-		selectable: "." + names.selectable,
-		selected: "." + names.selected
-	};
+    this.enableTapOnly = function () {
 
-	var searchGrid = {
-		row: "row",
-		column: "column"
-	};
+        $(document).off("click", CELL);
 
-	this.setUpView = function() {
-		createSearchGrid(matrix, names.cell, searchGrid.row, searchGrid.column, gameId);
-		createListOfWords(list, listId);
-	};
+        $(document).on("click", CELL, function () {
 
-	function createSearchGrid(matrix, cellName, rowAttr, colAttr, boardId) {
-		for (var i = 0; i < matrix.length; i++) {
-			var row = $("<div/>").attr({class: "boardRow"});
-			for (var j = 0; j < matrix[i].length; j++) {
-				var letter = $("<button/>");  
-				letter.attr({class: cellName, [rowAttr]: i, [colAttr]: j}).text(matrix[i][j]);
-				letter.appendTo(row);
-			}
-			row.appendTo($(boardId));
-		}
-	}
+            const cell = $(this);
 
-	function createListOfWords(wordList, wordListId) {
-		for (var i = 0; i < wordList.length; i++) {
-			var row = $("<div/>").attr({class: "listRow"});
-			for (var j = 0; j < wordList[i].length; j++) {
-				var word = $("<li/>");
-				word.attr({class: "listWord", text: wordList[i][j].replace(/\W/g, "")});
-				word.text(wordList[i][j]);
-				word.appendTo(row);
-			}
-			row.appendTo($(wordListId));
-		}
-	}
+            if (!selecting) {
+                resetSelection();
+                firstCell = cell;
+                selecting = true;
+                cell.addClass("selected");
+                return;
+            }
 
-	// ==============================
-	//  PARCHE REAL PARA MÓVIL
-	// ==============================
-	this.enableTouchOnly = function () {
+            // segundo toque
+            const secondCell = cell;
+            const path = getPath(firstCell, secondCell);
 
-    let selectedCells = [];
-    let wordMade = "";
-    let active = false;
-    let currentPath = null;
+            if (!path) {
+                resetSelection();
+                return;
+            }
 
-    $(gameId).css({
-        "touch-action": "none",
-        "user-select": "none"
-    });
+            const word = selectPath(firstCell, secondCell, path);
 
-    // =====================
-    // TOUCH START
-    // =====================
-    $(select.cells).on("touchstart", function (e) {
-        e.preventDefault();
+            if (validWordMade(list, word)) {
+                $(".selected").addClass("found");
+            }
 
-        active = true;
-        selectedCells = [];
-        wordMade = "";
-        currentPath = null;
+            resetSelection();
+        });
+    };
 
-        const cell = $(this);
+    function resetSelection() {
+        selecting = false;
+        firstCell = null;
+        $(".cell").removeClass("selected");
+    }
 
-        cell.addClass(names.selected).attr("id", names.pivot);
-        selectedCells.push(cell);
-        wordMade += cell.text();
+    function createGrid() {
+        for (let i = 0; i < matrix.length; i++) {
+            const row = $("<div>").addClass("boardRow");
+            for (let j = 0; j < matrix[i].length; j++) {
+                $("<button>")
+                    .addClass("cell")
+                    .attr({ row: i, column: j })
+                    .text(matrix[i][j])
+                    .appendTo(row);
+            }
+            $(gameId).append(row);
+        }
+    }
 
-        highlightValidDirections(cell, matrix, names.selectable);
-    });
+    function createWordList() {
+        list.forEach(row => {
+            const r = $("<div>").addClass("listRow");
+            row.forEach(word => {
+                $("<li>")
+                    .addClass("listWord")
+                    .attr("text", word.replace(/\W/g, ""))
+                    .text(word)
+                    .appendTo(r);
+            });
+            $(listId).append(r);
+        });
+    }
 
-    // =====================
-    // TOUCH MOVE
-    // =====================
-    $(document).on("touchmove", function (e) {
-        if (!active) return;
+    function getPath(a, b) {
+        const ax = +a.attr("row");
+        const ay = +a.attr("column");
+        const bx = +b.attr("row");
+        const by = +b.attr("column");
 
-        const touch = e.originalEvent.touches[0];
-        const el = document.elementFromPoint(touch.clientX, touch.clientY);
+        const dx = bx - ax;
+        const dy = by - ay;
 
-        if (!el || !el.classList.contains(names.cell)) return;
+        if (dx === 0) return dy > 0 ? paths.horizon : paths.horizonBack;
+        if (dy === 0) return dx > 0 ? paths.vert : paths.vertBack;
+        if (Math.abs(dx) === Math.abs(dy)) {
+            if (dx > 0 && dy > 0) return paths.priDiag;
+            if (dx < 0 && dy < 0) return paths.priDiagBack;
+            if (dx > 0 && dy < 0) return paths.secDiag;
+            return paths.secDiagBack;
+        }
+        return null;
+    }
 
-        const cell = $(el);
+    function selectPath(start, end, path) {
 
-        if (!cell.hasClass(names.selectable)) return;
-        if (selectedCells.includes(cell)) return;
+        let x = +start.attr("row");
+        let y = +start.attr("column");
+        const ex = +end.attr("row");
+        const ey = +end.attr("column");
 
-        const path = cell.attr(names.path);
+        let word = "";
 
-        if (!currentPath) currentPath = path;
-        if (path !== currentPath) return;
+        while (true) {
+            const cell = $(`[row=${x}][column=${y}]`);
+            cell.addClass("selected");
+            word += cell.text();
 
-        cell.addClass(names.selected);
-        selectedCells.push(cell);
-        wordMade += cell.text();
-    });
+            if (x === ex && y === ey) break;
 
-    // =====================
-    // TOUCH END
-    // =====================
-    $(document).on("touchend touchcancel", function () {
-        if (!active) return;
-
-        active = false;
-
-        if (validWordMade(list, wordMade)) {
-            $(select.selected).addClass("found");
+            const next = incr[path](x, y);
+            x = next.x;
+            y = next.y;
         }
 
-        $(select.selected).removeClass(names.selected);
-        $(select.cells).removeAttr(names.path);
-        $(select.pivot).removeAttr("id");
-        $(select.selectable).removeClass(names.selectable);
+        return word;
+    }
 
-        selectedCells = [];
-        wordMade = "";
-        currentPath = null;
-    });
-};
-
-	function highlightValidDirections(selectedCell, matrix, makeSelectable) {
-		var cellRow = parseInt(selectedCell.attr(searchGrid.row));
-		var cellCol = parseInt(selectedCell.attr(searchGrid.column));
-
-		Object.keys(paths).forEach(function(path) {
-			makeRangeSelectable(cellRow, cellCol, matrix.length, paths[path], makeSelectable);
-		});
-	}
-
-	function makeRangeSelectable(x, y, l, p, selectable) {  
-		for (var i = incr[p](x, y).x, j = incr[p](x, y).y; bounds[p](i, j, l); i = incr[p](i, j).x, j = incr[p](i, j).y) {
-			$("[" + searchGrid.row + "= " + i + "][" + searchGrid.column + "= " + j + "]")
-				.addClass(selectable)
-				.attr({[names.path]: p});
-		}
-	}
-
-	function validWordMade (list, wordToCheck) {
-		for (var i = 0; i < list.length; i++) {
-			for (var j = 0; j < list[i].length; j++) {
-				var trimmedWord = list[i][j].replace(/\W/g, "");
-				if (wordToCheck == trimmedWord || wordToCheck == reversedWord(trimmedWord)) {
-					wordsFound.push(trimmedWord);   
-					$(".listWord[text = " + trimmedWord + "]").addClass(selfSolved ? "User" : "found");
-					checkPuzzleSolved(".listWord", ".listWord.found");
-					return true;
-				}
-			}
-		}
-	}
-
-	function checkPuzzleSolved (fullList, foundWordsList) {
-		if ($(fullList).length == $(foundWordsList).length) {
-			document.getElementById('gameInfo').textContent = selfSolved
-				? 'Yay! You found them ALL! Press New Game to play again!'
-				: 'Answers Revealed... better luck next time!';
-			return true;
-		}
-		return false;
-	}
-
-	function reversedWord(word) {
-		var reversedWord = "";
-		for (var i = word.length - 1; i >= 0; i--) reversedWord += word.charAt(i);
-		return reversedWord;
-	}
+    function validWordMade(list, word) {
+        for (let row of list) {
+            for (let w of row) {
+                const t = w.replace(/\W/g, "");
+                if (word === t || word === t.split("").reverse().join("")) {
+                    $(".listWord[text=" + t + "]").addClass("found");
+                    wordsFound.push(t);
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
 }
