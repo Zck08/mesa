@@ -191,6 +191,10 @@ this.triggerMouseDrag = function () {
     let currentPath = null;
 
     $(gameId).css("touch-action", "none");
+	$(select.cells).css({
+    "touch-action": "none",
+    "user-select": "none"
+	});
 
     // ======================
     // POINTER DOWN (inicio)
