@@ -218,28 +218,30 @@ this.triggerMouseDrag = function () {
     // ======================
     // ENTRAR A OTRA CELDA
     // ======================
-    $(select.cells).on("pointerenter", function () {
+	$(document).on("pointermove", function (e) {
+		if (!pointerIsDown) return;
 
-        if (!pointerIsDown) return;
-        if (!$(this).hasClass(names.selectable)) return;
+		const el = document.elementFromPoint(e.clientX, e.clientY);
+		if (!el) return;
 
-        const path = $(this).attr(names.path);
+		const $cell = $(el).closest(select.cells);
+		if (!$cell.length) return;
 
-        // definir dirección al segundo cuadro
-        if (!currentPath) {
-            currentPath = path;
-        }
+		if (!$cell.hasClass(names.selectable)) return;
 
-        // impedir cambios de dirección
-        if (path !== currentPath) return;
+		const path = $cell.attr(names.path);
 
-        // evitar repetir celda
-        if (selectedCells.includes($(this))) return;
+		if (!currentPath) {
+			currentPath = path;
+		}
 
-        $(this).addClass(names.selected);
-        selectedCells.push($(this));
-        wordMade += $(this).text();
-    });
+		if (path !== currentPath) return;
+		if (selectedCells.includes($cell)) return;
+
+		$cell.addClass(names.selected);
+		selectedCells.push($cell);
+		wordMade += $cell.text();
+	});
 
     // ======================
     // POINTER UP (fin)
