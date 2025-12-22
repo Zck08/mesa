@@ -185,78 +185,65 @@ function WordSearchView(matrix, list, gameId, listId, wordsFound) {
 	 */
 this.triggerMouseDrag = function () {
 
-    var selectedLetters = [];
-    var wordMade = '';
-    var pointerIsDown = false;
-    var lastCell = null;
+    let selectedCells = [];
+    let wordMade = "";
+    let pointerIsDown = false;
+    let currentPath = null;
 
     $(gameId).css("touch-action", "none");
 
     // ======================
-    // POINTER DOWN
+    // POINTER DOWN (inicio)
     // ======================
     $(select.cells).on("pointerdown", function (e) {
-
         e.preventDefault();
-		this.setPointerCapture(e.pointerId);
+        this.setPointerCapture(e.pointerId);
+
         pointerIsDown = true;
-        lastCell = this;
-		
-        $(this).addClass(names.selected);
-        $(this).attr({ id: names.pivot });
+        selectedCells = [];
+        wordMade = "";
+        currentPath = null;
+
+        $(this).addClass(names.selected).attr("id", names.pivot);
+        selectedCells.push($(this));
+        wordMade += $(this).text();
 
         highlightValidDirections($(this), matrix, names.selectable);
     });
 
     // ======================
-    // POINTER MOVE (SOBRE EL TABLERO)
+    // ENTRAR A OTRA CELDA
     // ======================
-	$(gameId).on("pointermove", function (e) {
+    $(select.cells).on("pointerenter", function () {
 
-		if (!pointerIsDown) return;
+        if (!pointerIsDown) return;
+        if (!$(this).hasClass(names.selectable)) return;
 
-		const pivot = $(select.pivot);
-		if (!pivot.length) return;
+        const path = $(this).attr(names.path);
 
-		const direction = getDirectionFromDrag(pivot, e.clientX, e.clientY);
+        // definir dirección al segundo cuadro
+        if (!currentPath) {
+            currentPath = path;
+        }
 
-		// limpiar selección previa
-		selectedLetters.forEach(c => c.removeClass(names.selected));
-		selectedLetters = [];
-		wordMade = '';
+        // impedir cambios de dirección
+        if (path !== currentPath) return;
 
-		const fakeHoveredCell = pivot;
+        // evitar repetir celda
+        if (selectedCells.includes($(this))) return;
 
-		const cells = selectCellRange(
-			select.cells,
-			fakeHoveredCell,
-			names.path,
-			direction,
-			selectedLetters,
-			wordMade
-		);
-
-		wordMade = cells.word;
-		selectedLetters = cells.array;
-	});
-
-    // ======================
-    // POINTER UP
-    // ======================
-    $(document).on("pointerup pointercancel", function () {
-        if (pointerIsDown) endMove();
+        $(this).addClass(names.selected);
+        selectedCells.push($(this));
+        wordMade += $(this).text();
     });
 
     // ======================
-    // FINALIZAR JUGADA
+    // POINTER UP (fin)
     // ======================
-    function endMove() {
-		try {
-    		document.releasePointerCapture?.();
-		} catch(e) {}
+    $(document).on("pointerup pointercancel", function () {
+        if (!pointerIsDown) return;
 
         pointerIsDown = false;
-        lastCell = null;
 
         if (validWordMade(list, wordMade)) {
             $(select.selected).addClass("found");
@@ -267,10 +254,12 @@ this.triggerMouseDrag = function () {
         $(select.pivot).removeAttr("id");
         $(select.selectable).removeClass(names.selectable);
 
-        wordMade = '';
-        selectedLetters = [];
-    }
+        selectedCells = [];
+        wordMade = "";
+        currentPath = null;
+    });
 };
+
 
     /*
     highlights all the valid directions in the matrix from where mouse is first clicked
