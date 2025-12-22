@@ -9,7 +9,7 @@
     <link rel="stylesheet" type="text/css" href="WordSearch/wordSearch.css">
     <link rel="preconnect" href="https://font.gstatic.com">
     <link href="https://fonts.googleapis.com/css?family=Itim&display=swap" rel="stylesheet">
-    <title>AI-rcade</title>
+    <title>ROMA</title>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="WordSearch/WSlogic.js"></script>
     <script src="WordSearch/WSpath.js"></script>
@@ -20,25 +20,24 @@
 
 <body>
     <section id="topScreen">
-        <button id="return" onclick="returnToMain()">Exit</button>
-        <div id="Timer" class="hide">Time Left: 40s</div>
+        <div id="Timer" class="hide">Tiempo restante: 40s</div>
         <script>
             function returnToMain() {
                 window.location.href = "index.html"
             }
         </script>
     </section>
-    <h1>Word Search</h1>
-    <h2 id="gameInfo">Click-and-Drag to select words! Or press Race the Clock for a Challenge!</h2>
-    <h3 id="themeIntro">The theme is: <span id="wordTheme"></span></h3>
+    <h1>Sopa de letras</h1>
+    <h2 id="gameInfo">Selecciona una letra y arrastrala</h2>
+    <h3 id="themeIntro">El tema es: <span id="wordTheme"></span></h3>
     <section id="gameOptions">
-        <button id="newGameButton" type="button">New Game</button>
-        <button id="challenge" type="button">Race The Clock</button>
+        <button id="newGameButton" type="button">Nueva sopa</button>
+        <button id="challenge" type="button">Contrareloj</button>
     </section>
     <div id="wordboard"></div>
     <div id="wordlist"></div>
     <section id="solve">
-        <button id="solveButton" type="button">Release the sacred answers!</button>
+        <button id="solveButton" type="button">Revelar respuestas</button>
     </section>
 
     <script>

@@ -211,42 +211,34 @@ this.triggerMouseDrag = function () {
     // ======================
     // POINTER MOVE (SOBRE EL TABLERO)
     // ======================
-    $(gameId).on("pointermove", function (e) {
+	$(gameId).on("pointermove", function (e) {
 
-        if (!pointerIsDown) return;
+		if (!pointerIsDown) return;
 
-        const el = document.elementFromPoint(e.clientX, e.clientY);
-        if (!el) return;
+		const pivot = $(select.pivot);
+		if (!pivot.length) return;
 
-        const cell = el.closest(select.cells);
-        if (!cell || cell === lastCell) return;
+		const direction = getDirectionFromDrag(pivot, e.clientX, e.clientY);
 
-        lastCell = cell;
-        const $cell = $(cell);
+		// limpiar selección previa
+		selectedLetters.forEach(c => c.removeClass(names.selected));
+		selectedLetters = [];
+		wordMade = '';
 
-        if ($cell.hasClass(names.selectable)) {
+		const fakeHoveredCell = pivot;
 
-            const currentDirection = $cell.attr(names.path);
+		const cells = selectCellRange(
+			select.cells,
+			fakeHoveredCell,
+			names.path,
+			direction,
+			selectedLetters,
+			wordMade
+		);
 
-            // limpiar selección previa
-            selectedLetters.forEach(c => c.removeClass(names.selected));
-
-            selectedLetters = [];
-            wordMade = '';
-
-            const cells = selectCellRange(
-                select.cells,
-                $cell,
-                names.path,
-                currentDirection,
-                selectedLetters,
-                wordMade
-            );
-
-            wordMade = cells.word;
-            selectedLetters = cells.array;
-        }
-    });
+		wordMade = cells.word;
+		selectedLetters = cells.array;
+	});
 
     // ======================
     // POINTER UP
@@ -504,6 +496,22 @@ this.triggerMouseDrag = function () {
 
 		return reversedWord;
 
+	}
+	function getDirectionFromDrag(pivot, x, y) {
+		const rect = pivot[0].getBoundingClientRect();
+		const dx = x - (rect.left + rect.width / 2);
+		const dy = y - (rect.top + rect.height / 2);
+
+		if (Math.abs(dx) > Math.abs(dy)) {
+			return dx > 0 ? paths.horizon : paths.horizonBack;
+		} else if (Math.abs(dy) > Math.abs(dx)) {
+			return dy > 0 ? paths.vert : paths.vertBack;
+		} else {
+			if (dx > 0 && dy > 0) return paths.priDiag;
+			if (dx < 0 && dy < 0) return paths.priDiagBack;
+			if (dx > 0 && dy < 0) return paths.secDiag;
+			return paths.secDiagBack;
+		}
 	}
 
 }
