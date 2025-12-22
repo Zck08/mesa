@@ -103,12 +103,11 @@ body {
 
 /* info on how the table is displayed on screen for word search*/
 .cell {
-    aspect-ratio: 1 / 1;
-    width: calc(95vw / 20);
-    max-width: 32px;
-    font-size: clamp(12px, 2.5vw, 17px);
+    touch-action: manipulation;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
 }
-
 /* mouse color on table*/
 .cell:hover {
 

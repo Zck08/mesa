@@ -203,7 +203,7 @@ function WordSearchController(gameId, listId, solveId, newGameId, themeId, chall
 		//generates the view of the game and sets up mouse events for clicking and dragging
 		view = new WordSearchView(game.getMatrix(), game.getListOfWords(), gameId, listId, wordsFound, timerInterval, timerId);
 		view.setUpView();
-		view.enableTouchOnly();
+		view.enableTapOnly();
 
         // Function to update game state
         function updateGameState(newState) {
