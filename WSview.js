@@ -1,37 +1,40 @@
 function WordSearchView(matrix, list, gameId, listId, wordsFound) {
 
     let firstCell = null;
-    let selecting = false;
+    let waitingSecondTap = false;
 
     const CELL = ".cell";
 
     this.setUpView = function () {
         createGrid();
         createWordList();
+        enableTapOnly();
     };
 
-    this.enableTapOnly = function () {
+    function enableTapOnly() {
 
+        // elimina cualquier evento previo
         $(document).off("click", CELL);
 
         $(document).on("click", CELL, function () {
 
             const cell = $(this);
 
-            if (!selecting) {
-                resetSelection();
+            // PRIMER TOQUE
+            if (!waitingSecondTap) {
+                clearSelection();
                 firstCell = cell;
-                selecting = true;
+                waitingSecondTap = true;
                 cell.addClass("selected");
                 return;
             }
 
-            // segundo toque
+            // SEGUNDO TOQUE
             const secondCell = cell;
-            const path = getPath(firstCell, secondCell);
 
+            const path = getPath(firstCell, secondCell);
             if (!path) {
-                resetSelection();
+                clearSelection();
                 return;
             }
 
@@ -41,12 +44,12 @@ function WordSearchView(matrix, list, gameId, listId, wordsFound) {
                 $(".selected").addClass("found");
             }
 
-            resetSelection();
+            clearSelection();
         });
-    };
+    }
 
-    function resetSelection() {
-        selecting = false;
+    function clearSelection() {
+        waitingSecondTap = false;
         firstCell = null;
         $(".cell").removeClass("selected");
     }
@@ -54,13 +57,16 @@ function WordSearchView(matrix, list, gameId, listId, wordsFound) {
     function createGrid() {
         for (let i = 0; i < matrix.length; i++) {
             const row = $("<div>").addClass("boardRow");
+
             for (let j = 0; j < matrix[i].length; j++) {
-                $("<button>")
+                $("<div>")
                     .addClass("cell")
-                    .attr({ row: i, column: j })
+                    .attr("data-row", i)
+                    .attr("data-column", j)
                     .text(matrix[i][j])
                     .appendTo(row);
             }
+
             $(gameId).append(row);
         }
     }
@@ -71,7 +77,7 @@ function WordSearchView(matrix, list, gameId, listId, wordsFound) {
             row.forEach(word => {
                 $("<li>")
                     .addClass("listWord")
-                    .attr("text", word.replace(/\W/g, ""))
+                    .attr("data-word", word.replace(/\W/g, ""))
                     .text(word)
                     .appendTo(r);
             });
@@ -80,36 +86,37 @@ function WordSearchView(matrix, list, gameId, listId, wordsFound) {
     }
 
     function getPath(a, b) {
-        const ax = +a.attr("row");
-        const ay = +a.attr("column");
-        const bx = +b.attr("row");
-        const by = +b.attr("column");
+        const ax = +a.data("row");
+        const ay = +a.data("column");
+        const bx = +b.data("row");
+        const by = +b.data("column");
 
         const dx = bx - ax;
         const dy = by - ay;
 
-        if (dx === 0) return dy > 0 ? paths.horizon : paths.horizonBack;
-        if (dy === 0) return dx > 0 ? paths.vert : paths.vertBack;
+        if (dx === 0 && dy !== 0) return dy > 0 ? paths.horizon : paths.horizonBack;
+        if (dy === 0 && dx !== 0) return dx > 0 ? paths.vert : paths.vertBack;
+
         if (Math.abs(dx) === Math.abs(dy)) {
             if (dx > 0 && dy > 0) return paths.priDiag;
             if (dx < 0 && dy < 0) return paths.priDiagBack;
             if (dx > 0 && dy < 0) return paths.secDiag;
-            return paths.secDiagBack;
+            if (dx < 0 && dy > 0) return paths.secDiagBack;
         }
+
         return null;
     }
 
     function selectPath(start, end, path) {
-
-        let x = +start.attr("row");
-        let y = +start.attr("column");
-        const ex = +end.attr("row");
-        const ey = +end.attr("column");
+        let x = +start.data("row");
+        let y = +start.data("column");
+        const ex = +end.data("row");
+        const ey = +end.data("column");
 
         let word = "";
 
         while (true) {
-            const cell = $(`[row=${x}][column=${y}]`);
+            const cell = $(`.cell[data-row=${x}][data-column=${y}]`);
             cell.addClass("selected");
             word += cell.text();
 
@@ -126,10 +133,12 @@ function WordSearchView(matrix, list, gameId, listId, wordsFound) {
     function validWordMade(list, word) {
         for (let row of list) {
             for (let w of row) {
-                const t = w.replace(/\W/g, "");
-                if (word === t || word === t.split("").reverse().join("")) {
-                    $(".listWord[text=" + t + "]").addClass("found");
-                    wordsFound.push(t);
+                const clean = w.replace(/\W/g, "");
+                const reversed = clean.split("").reverse().join("");
+
+                if (word === clean || word === reversed) {
+                    $(`.listWord[data-word="${clean}"]`).addClass("found");
+                    wordsFound.push(clean);
                     return true;
                 }
             }
