@@ -64,73 +64,86 @@ function WordSearchView(matrix, list, gameId, listId, wordsFound) {
 	// ==============================
 	//  PARCHE REAL PARA MÓVIL
 	// ==============================
-	this.triggerMouseDrag = function () {
+	this.enableTouchOnly = function () {
 
-		let selectedCells = [];
-		let wordMade = "";
-		let pointerIsDown = false;
-		let currentPath = null;
+    let selectedCells = [];
+    let wordMade = "";
+    let active = false;
+    let currentPath = null;
 
-		$(gameId).css("touch-action", "none");
+    $(gameId).css({
+        "touch-action": "none",
+        "user-select": "none"
+    });
 
-		// INICIO
-		$(select.cells).on("pointerdown", function (e) {
-			e.preventDefault();
-			this.setPointerCapture(e.pointerId);
+    // =====================
+    // TOUCH START
+    // =====================
+    $(select.cells).on("touchstart", function (e) {
+        e.preventDefault();
 
-			pointerIsDown = true;
-			selectedCells = [];
-			wordMade = "";
-			currentPath = null;
+        active = true;
+        selectedCells = [];
+        wordMade = "";
+        currentPath = null;
 
-			$(this).addClass(names.selected).attr("id", names.pivot);
-			selectedCells.push($(this));
-			wordMade += $(this).text();
+        const cell = $(this);
 
-			highlightValidDirections($(this), matrix, names.selectable);
-		});
+        cell.addClass(names.selected).attr("id", names.pivot);
+        selectedCells.push(cell);
+        wordMade += cell.text();
 
-		// MOVIMIENTO (CLAVE PARA TOUCH)
-		$(document).on("pointermove", function (e) {
-			if (!pointerIsDown) return;
+        highlightValidDirections(cell, matrix, names.selectable);
+    });
 
-			const el = document.elementFromPoint(e.clientX, e.clientY);
-			if (!el) return;
+    // =====================
+    // TOUCH MOVE
+    // =====================
+    $(document).on("touchmove", function (e) {
+        if (!active) return;
 
-			const $cell = $(el).closest(select.cells);
-			if (!$cell.length) return;
-			if (selectedCells.includes($cell)) return;
+        const touch = e.originalEvent.touches[0];
+        const el = document.elementFromPoint(touch.clientX, touch.clientY);
 
-			const path = $cell.attr(names.path);
-			if (!path) return;
+        if (!el || !el.classList.contains(names.cell)) return;
 
-			if (!currentPath) currentPath = path;
-			if (path !== currentPath) return;
+        const cell = $(el);
 
-			$cell.addClass(names.selected);
-			selectedCells.push($cell);
-			wordMade += $cell.text();
-		});
+        if (!cell.hasClass(names.selectable)) return;
+        if (selectedCells.includes(cell)) return;
 
-		// FIN
-		$(document).on("pointerup pointercancel", function () {
-			if (!pointerIsDown) return;
-			pointerIsDown = false;
+        const path = cell.attr(names.path);
 
-			if (validWordMade(list, wordMade)) {
-				$(select.selected).addClass("found");
-			}
+        if (!currentPath) currentPath = path;
+        if (path !== currentPath) return;
 
-			$(select.selected).removeClass(names.selected);
-			$(select.cells).removeAttr(names.path);
-			$(select.pivot).removeAttr("id");
-			$(select.selectable).removeClass(names.selectable);
+        cell.addClass(names.selected);
+        selectedCells.push(cell);
+        wordMade += cell.text();
+    });
 
-			selectedCells = [];
-			wordMade = "";
-			currentPath = null;
-		});
-	};
+    // =====================
+    // TOUCH END
+    // =====================
+    $(document).on("touchend touchcancel", function () {
+        if (!active) return;
+
+        active = false;
+
+        if (validWordMade(list, wordMade)) {
+            $(select.selected).addClass("found");
+        }
+
+        $(select.selected).removeClass(names.selected);
+        $(select.cells).removeAttr(names.path);
+        $(select.pivot).removeAttr("id");
+        $(select.selectable).removeClass(names.selectable);
+
+        selectedCells = [];
+        wordMade = "";
+        currentPath = null;
+    });
+};
 
 	function highlightValidDirections(selectedCell, matrix, makeSelectable) {
 		var cellRow = parseInt(selectedCell.attr(searchGrid.row));
