@@ -1,28 +1,16 @@
-import React, { Fragment } from "react";
-import "./confetti.scss";
+import React from "react";
+import "./confetti.css";
 
-let count = 200;
-let points = [];
+const COUNT = 200;
 
-function Confetti({ open }) {
-  let confetti = generatePoints();
-
-  function generatePoints() {
-    points = [];
-
-    for (let i = 0; i < count; i++) {
-      points.push(<p className={`${open ? "animated" : ""}`} key={i} />);
-    }
-    return points;
-  }
+export default function Confetti({ open }) {
+  if (!open) return null;
 
   return (
-    <Fragment>
-      <div className={`confetti ${open ? "animated" : ""}`}>
-        {confetti.map(c => c)}
-      </div>
-    </Fragment>
+    <div className={`confetti animated`}>
+      {Array.from({ length: COUNT }).map((_, i) => (
+        <p key={i} className="animated" />
+      ))}
+    </div>
   );
 }
-
-export default Confetti;
