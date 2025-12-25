@@ -45,6 +45,13 @@ export default function GiftBoxAnimation() {
   return (
     <div className="App">
       <Confetti open={jump === "jump"} />
+
+      {rotated === "rotated" && (
+       <div className="message">
+           🎉 ¡Sorpresa! Feliz Navidad 🎁
+        </div>
+      )}
+
       <div className="img-container">
         <img className={`kuku ${jump}`} src={kuku} alt="kuku" />
         <button className="box" onClick={() => animate()}>
