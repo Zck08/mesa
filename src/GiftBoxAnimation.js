@@ -48,7 +48,7 @@ export default function GiftBoxAnimation() {
 
       {rotated === "rotated" && (
        <div className="message">
-           🎉 ¡Sorpresa! Feliz Navidad 🎁
+           ¡Sorpresa! Feliz Navidad
         </div>
       )}
 
