@@ -21,6 +21,7 @@ body {
   bottom: 0;
   cursor: pointer;
   outline: none;
+  z-index: 3;
 }
 
 .box img {
@@ -32,7 +33,7 @@ body {
   left: 50%;
   transform: translate(-50%);
   bottom: 0;
-  z-index: -1;
+  z-index: 1;
 }
 
 .lid {
@@ -40,6 +41,7 @@ body {
   left: 50%;
   transform: translate(-50%);
   bottom: 5.8em;
+  z-index: 4
 }
 
 .jump {
